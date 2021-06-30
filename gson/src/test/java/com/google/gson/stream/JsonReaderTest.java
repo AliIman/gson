@@ -36,12 +36,7 @@ import static com.google.gson.stream.JsonToken.STRING;
 @SuppressWarnings("resource")
 public final class JsonReaderTest extends TestCase {
   public void testReadArray() throws IOException {
-    JsonReader reader = new JsonReader(reader("[true, true]"));
-    reader.beginArray();
-    assertEquals(true, reader.nextBoolean());
-    assertEquals(true, reader.nextBoolean());
-    reader.endArray();
-    assertEquals(JsonToken.END_DOCUMENT, reader.peek());
+    this.testBooleansTemplate("[true, true]", true, true);
   }
 
   public void testReadEmptyArray() throws IOException {
@@ -345,26 +340,20 @@ public final class JsonReaderTest extends TestCase {
     }
   }
 
+  public void testLenientNaNDouble() throws IOException {
+    this.testLenientNaNDoubleTemplate("[NaN]");
+  }
+
   public void testLenientNonFiniteDoubles() throws IOException {
-    String json = "[NaN, -Infinity, Infinity]";
-    JsonReader reader = new JsonReader(reader(json));
-    reader.setLenient(true);
-    reader.beginArray();
-    assertTrue(Double.isNaN(reader.nextDouble()));
-    assertEquals(Double.NEGATIVE_INFINITY, reader.nextDouble());
-    assertEquals(Double.POSITIVE_INFINITY, reader.nextDouble());
-    reader.endArray();
+    this.testLenientNonFiniteDoublesTemplate("[-Infinity, Infinity]", Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+  }
+
+  public void testLenientQuotedNaNDouble() throws IOException {
+    this.testLenientNaNDoubleTemplate("[\"NaN\"]");
   }
 
   public void testLenientQuotedNonFiniteDoubles() throws IOException {
-    String json = "[\"NaN\", \"-Infinity\", \"Infinity\"]";
-    JsonReader reader = new JsonReader(reader(json));
-    reader.setLenient(true);
-    reader.beginArray();
-    assertTrue(Double.isNaN(reader.nextDouble()));
-    assertEquals(Double.NEGATIVE_INFINITY, reader.nextDouble());
-    assertEquals(Double.POSITIVE_INFINITY, reader.nextDouble());
-    reader.endArray();
+    this.testLenientNonFiniteDoublesTemplate("[\"-Infinity\", \"Infinity\"]", Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
   }
 
   public void testStrictNonFiniteDoublesWithSkipValue() throws IOException {
@@ -441,12 +430,7 @@ public final class JsonReaderTest extends TestCase {
   }
 
   public void testBooleans() throws IOException {
-    JsonReader reader = new JsonReader(reader("[true,false]"));
-    reader.beginArray();
-    assertEquals(true, reader.nextBoolean());
-    assertEquals(false, reader.nextBoolean());
-    reader.endArray();
-    assertEquals(JsonToken.END_DOCUMENT, reader.peek());
+    this.testBooleansTemplate("[true,false]", true, false);
   }
 
   public void testPeekingUnquotedStringsPrefixedWithBooleans() throws IOException {
@@ -1784,5 +1768,41 @@ public final class JsonReaderTest extends TestCase {
       @Override public void close() throws IOException {
       }
     }; */
+  }
+
+  public void testBooleansFalseFalse() throws IOException {
+    this.testBooleansTemplate("[false,false]", false, false);
+  }
+
+  public void testBooleansFalseTrue() throws IOException {
+    this.testBooleansTemplate("[false,true]", false, true);
+  }
+
+  public void testLenientNaNDoubleTemplate(String string1) throws IOException {
+    String json = string1;
+    JsonReader reader = new JsonReader(reader(json));
+    reader.setLenient(true);
+    reader.beginArray();
+    assertTrue(Double.isNaN(reader.nextDouble()));
+    reader.endArray();
+  }
+
+  public void testLenientNonFiniteDoublesTemplate(String string1, double double1, double double2) throws IOException {
+    String json = string1;
+    JsonReader reader = new JsonReader(reader(json));
+    reader.setLenient(true);
+    reader.beginArray();
+    assertEquals(double1, reader.nextDouble());
+    assertEquals(double2, reader.nextDouble());
+    reader.endArray();
+  }
+
+  public void testBooleansTemplate(String string1, boolean b1, boolean b2) throws IOException {
+    JsonReader reader = new JsonReader(reader(string1));
+    reader.beginArray();
+    assertEquals(b1, reader.nextBoolean());
+    assertEquals(b2, reader.nextBoolean());
+    reader.endArray();
+    assertEquals(JsonToken.END_DOCUMENT, reader.peek());
   }
 }
